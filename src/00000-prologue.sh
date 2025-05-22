@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
+##############################
 # 00000-prologue section START
+##############################
 
-echo "Hello from prologue!"
+# bash script safe settings
+set -euo pipefail
 
+############################
 # 00000-prologue section END
+############################

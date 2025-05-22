@@ -5,7 +5,9 @@ PROGRAM_DIR := ./bin
 TARGET_PROGRAM := ax
 TARGET_PROGRAM_PATH := $(PROGRAM_DIR)/$(TARGET_PROGRAM)
 
-.PHONY: clean run
+SHELLCHECK_EXCLUSIONS := 2034
+
+.PHONY: clean check run
 
 all: $(TARGET_PROGRAM_PATH)
 
@@ -13,10 +15,12 @@ $(TARGET_PROGRAM_PATH) : $(SOURCE_SCRIPTS)
 	mkdir -p $(PROGRAM_DIR)
 	cat $^ > $@
 	chmod +x $@
-	shellcheck $@
 
 clean:
 	rm -rfv $(PROGRAM_DIR)
+
+check: | $(TARGET_PROGRAM_PATH)
+	shellcheck -e $(SHELLCHECK_EXCLUSIONS) $(TARGET_PROGRAM_PATH)
 
 run: | $(TARGET_PROGRAM_PATH)
 	@printf "\n"
