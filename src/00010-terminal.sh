@@ -39,14 +39,14 @@ fg_bright_cyan="${term_csi}96m"
 fg_bright_white="${term_csi}97m"
 
 # terminal bright background colors
-fg_bright_black="${term_csi}100m"
-fg_bright_red="${term_csi}101m"
-fg_bright_green="${term_csi}102m"
-fg_bright_yellow="${term_csi}1030m"
-fg_bright_blue="${term_csi}104m"
-fg_bright_magenta="${term_csi}105m"
-fg_bright_cyan="${term_csi}106m"
-fg_bright_white="${term_csi}107m"
+bg_bright_black="${term_csi}100m"
+bg_bright_red="${term_csi}101m"
+bg_bright_green="${term_csi}102m"
+bg_bright_yellow="${term_csi}1030m"
+bg_bright_blue="${term_csi}104m"
+bg_bright_magenta="${term_csi}105m"
+bg_bright_cyan="${term_csi}106m"
+bg_bright_white="${term_csi}107m"
 
 # terminal text style
 bold="${term_csi}1m"
