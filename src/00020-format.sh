@@ -2,6 +2,11 @@
 # 00020-format section START
 ############################
 
+# format escape
+function fmt_esc {
+    sed -e 's/[][]/\\&/g' <<< "${1}"
+}
+
 # formatting rules
 fmt_rules=(
     "var:${fg_bright_cyan}"
@@ -11,11 +16,11 @@ fmt_rules=(
 )
 
 # build sed formatting commands
-fmt_sed_cmds="-e s/\]/${term_reset}/g"
+fmt_sed_cmds=''
 for rule in "${fmt_rules[@]}"
 do
     IFS=':' read -r tag code <<< "${rule}"
-    fmt_sed_cmds="${fmt_sed_cmds} -e s/\[${tag}:/${code}/g"
+    fmt_sed_cmds="${fmt_sed_cmds} -e s/${tag}/${code}/"
 done
 
 # formatting function
@@ -43,21 +48,21 @@ function entry {
     local indent=$((entry_level * 2))
     local spaces=""
     for ((i = 0; i < indent; i++)) ; do spaces="${spaces} " ; done
-    max_cols=$((max_cols - indent))
     local line_buf=''
 
     local append
     function append {
         while IFS= read -r -n 1 ch ; do
             if [[ "${col_cnt}" == 0 ]] ; then
-                line_buf="${spaces}"
+                line_buf="${spaces}${line_buf}"
+                col_cnt="${indent}"
             fi
             if [[ -n "${ch}" ]] ; then
                 line_buf="${line_buf}${ch}"
                 col_cnt=$((col_cnt + 1))
                 if [[ "${col_cnt}" == "${max_cols}" ]] ; then
-                    fmt "${line_buf}"
-                    line_buf=""
+                    echo "${line_buf}"
+                    line_buf=''
                     col_cnt=0
                 fi
             fi
@@ -65,38 +70,53 @@ function entry {
     }
 
     while IFS= read -r -n 1 ch ; do
-        if [[ "${state}" == 0 ]] ; then
-            if [[ "${ch}" == '[' ]] ; then
-                state=1
-            else
-                append "${ch}"
-            fi
-        elif [[ "${state}" == 1 ]] ; then
-            if [[ "${ch}" == '>' ]] ; then
-                state=2
-            else
-                state=0
-                append "{${ch}"
-            fi
-        elif [[ "${state}" == 2 ]] ; then
-            if [[ "${ch}" == ':' ]] ; then
-                line_buf="${line_buf}[${tag}:"
-                state=3
-            else
-                tag="${tag}${ch}"
-            fi
-        elif [[ "${state}" == 3 ]] ; then
-            if [[ "${ch}" == ']' ]] ; then
-                line_buf="${line_buf}${ch}"
-                tag=''
-                state=0
-            else
-                append "${ch}"
-            fi
-        fi
+        case "${state}" in
+            0)  if [[ "${ch}" == '\' ]] ; then
+                    state=1
+                elif [[ "${ch}" == '[' ]] ; then
+                    state=2
+                else
+                    append "${ch}"
+                fi ;;
+            1)  if [[ "${ch}" == '[' ]] ; then
+                    append '['
+                elif [[ "${ch}" == ']' ]] ; then
+                    append ']'
+                else
+                    append "\\${ch}"
+                fi
+                state=0 ;;
+            2) if [[ "${ch}" == ':' ]] ; then
+                   line_buf="${line_buf}$(fmt ${tag})"
+                   tag=''
+                   state=3
+               elif [[ "${ch}" == ']' ]] ; then
+                   append "[${tag}]"
+                   tag=''
+                   state=0
+               else
+                   tag="${tag}${ch}"
+               fi ;;
+            3) if [[ "${ch}" == '\' ]] ; then
+                   state=4
+               elif [[ "${ch}" == ']' ]] ; then
+                   line_buf="${line_buf}${term_reset}"
+                   state=0
+               else
+                   append "${ch}"
+               fi ;;
+            *) if [[ "${ch}" == '[' ]] ; then
+                   append "["
+               elif [[ "${ch}" == ']' ]] ; then
+                   append "]"
+               else
+                   append "\\${ch}"
+               fi
+               state=3 ;;
+        esac
     done <<< $1
     if [[ col_cnt > 0 ]] ; then
-        fmt "${line_buf}"
+        echo "${line_buf}"
     fi
 }
 

@@ -5,7 +5,7 @@
 # set environment variable
 function env_set {
     export "${1}"="${2}"
-    entry "set environment variable [>var:${1}] to [>val:${2}]"
+    entry "set environment variable [var:${1}] to [val:$(fmt_esc ${2})]"
 }
 
 ##################################
