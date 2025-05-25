@@ -84,6 +84,7 @@ function setup_ax_binutils_pass_1 {
 
     binutils_url="https://sourceware.org/pub/binutils/releases/binutils-2.44.tar.xz"
     binutils_archive=$(basename "${binutils_url}")
+
     change_dir "${AX_TOOLS}"
     fetch_url "${binutils_url}" "${binutils_archive}"
     unpack_archive "${binutils_archive}"
@@ -141,25 +142,25 @@ function setup_ax_gcc_pass_1 {
 
     prepare_build
     configure_build \
-        --target=$AX_TGT \
-        --prefix=$AX_TOOLS \
-        --with-glibc-version=2.41 \
-        --with-sysroot=$AX_ROOT \
-        --with-newlib \
-        --without-headers \
-        --enable-default-pie \
-        --enable-default-ssp \
-        --disable-nls \
-        --disable-shared \
-        --disable-multilib \
-        --disable-threads \
-        --disable-libatomic \
-        --disable-libgomp \
-        --disable-libquadmath \
-        --disable-libssp \
-        --disable-libvtv \
-        --disable-libstdcxx \
-        --enable-languages=c,c++
+        "--target=$AX_TGT" \
+        "--prefix=$AX_TOOLS" \
+        "--with-glibc-version=2.41" \
+        "--with-sysroot=$AX_ROOT" \
+        "--with-newlib" \
+        "--without-headers" \
+        "--enable-default-pie" \
+        "--enable-default-ssp" \
+        "--disable-nls" \
+        "--disable-shared" \
+        "--disable-multilib" \
+        "--disable-threads" \
+        "--disable-libatomic" \
+        "--disable-libgomp" \
+        "--disable-libquadmath" \
+        "--disable-libssp" \
+        "--disable-libvtv" \
+        "--disable-libstdcxx" \
+        "--enable-languages=c,c++"
     compile_build
     install_build
 
@@ -172,6 +173,66 @@ function setup_ax_gcc_pass_1 {
     entry "Successfully installed [note:gcc (Pass 1)]..."
 }
 
+function setup_ax_linux_api_headers {
+    entry "Installing [note:linux API headers]..."
+    entry_up
+
+    linux_url="https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.14.6.tar.xz"
+    linux_archive=$(basename "${linux_url}")
+
+    change_dir "${AX_TOOLS}"
+    fetch_url "${linux_url}" "${linux_archive}"
+    unpack_archive "${linux_archive}"
+    change_dir $(archive_name "${linux_archive}")
+    entry "Cleaning up package"
+    shell_cmd "make mrproper"
+    entry "Generating headers"
+    shell_cmd "make headers"
+    entry "Installing headers"
+    shell_cmd "find usr/include -type f ! -name '*.h' -delete"
+    shell_cmd "cp -rv usr/include ${AX_ROOT}/usr"
+
+    entry_down
+    entry "Successfully installed [note:linux API headers]..."
+}
+
+function setup_ax_glibc {
+    entry "Installing [note:glibc]..."
+    entry_up
+
+    glibc_url="https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz"
+    glibc_archive=$(basename "${glibc_url}")
+    patch_url="https://www.linuxfromscratch.org/patches/lfs/development/glibc-2.41-fhs-1.patch"
+    patch_file=$(basename "${patch_url}")
+
+    change_dir "${AX_TOOLS}"
+    fetch_url "${glibc_url}" "${glibc_archive}"
+    unpack_archive "${glibc_archive}"
+    change_dir $(archive_name "${glibc_archive}")
+    fetch_url "${patch_url}" "${patch_file}"
+    entry "Creating 64-bit library compatibility links"
+    shell_cmd "ln -sfv ../lib/ld-linux-x86-64.so.2 $AX_ROOT/lib64"
+    shell_cmd "ln -sfv ../lib/ld-linux-x86-64.so.2 $AX_ROOT/lib64/ld-lsb-x86-64.so.3"
+    apply_patch "${patch_file}"
+    prepare_build
+    entry "Enforcing the use of [path:/usr/sbin] directory"
+    echo "rootsbindir=/usr/sbin" > configparms
+    configure_build \
+      "--prefix=/usr" \
+      "--host=$AX_TGT" \
+      "--build=$(../scripts/config.guess)" \
+      "--disable-nscd" \
+      "libc_cv_slibdir=/usr/lib" \
+      "--enable-kernel=5.4"
+    compile_build
+    install_build "${AX_ROOT}"
+    entry "Fix hardcoded path to the executable loader in [note:ldd] script"
+    shell_cmd "sed /RTLDLIST=/s@/usr@@g -i ${AX_ROOT}/usr/bin/ldd"
+
+    entry_down
+    entry "Successfully installed [note:glibc]..."
+}
+
 
 function setup_ax {
     entry "Starting [note:AX system] setup..."
@@ -181,6 +242,8 @@ function setup_ax {
     setup_ax_fhs
     setup_ax_binutils_pass_1
     setup_ax_gcc_pass_1
+    setup_ax_linux_api_headers
+    setup_ax_glibc
 
     entry_down
     entry "Completed [note:AX system] setup."

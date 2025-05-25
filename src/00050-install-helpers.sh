@@ -96,6 +96,12 @@ function unpack_archive {
     entry "Succesfully extracted archive [path:'${1}']"
 }
 
+# apply patch
+function apply_patch {
+    entry "Applying patch [path:${1}]."
+    shell_cmd "patch -Np1 -i ${1}"
+}
+
 # prepare build
 function prepare_build {
     create_dir "build"
@@ -119,7 +125,11 @@ function compile_build {
 # compile build
 function install_build {
     entry "Installing build..."
-    shell_cmd "make install"
+    if [[ -z "${1}" ]] ; then
+        shell_cmd "make install"
+    else
+        shell_cmd "make DESTDIR=${1} install"
+    fi
     entry "Successfully installed build."
 }
 
