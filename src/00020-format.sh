@@ -25,6 +25,7 @@ fmt_rules=(
     "err:${fg_bright_red}"
     "note:${fg_bright_yellow}"
     "path:${fg_bright_green}"
+    "url:${fg_bright_green}"
     "val:${fg_bright_magenta}"
     "var:${fg_bright_cyan}"
 )
