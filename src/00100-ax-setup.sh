@@ -189,7 +189,7 @@ function setup_ax_linux_api_headers {
     entry "Generating headers"
     shell_cmd "make headers"
     entry "Installing headers"
-    shell_cmd "find usr/include -type f ! -name '*.h' -delete"
+    shell_cmd "find usr/include -type f ! -name '\*.h' -delete"
     shell_cmd "cp -rv usr/include ${AX_ROOT}/usr"
 
     entry_down

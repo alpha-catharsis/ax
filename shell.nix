@@ -11,6 +11,7 @@ pkgs.mkShell {
     pkgs.bison
     pkgs.curl
     pkgs.gcc
+    pkgs.gettext
     pkgs.gnumake
     pkgs.gnutar
     pkgs.shellcheck
