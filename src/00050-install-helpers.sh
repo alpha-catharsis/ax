@@ -72,7 +72,7 @@ function archive_name {
         *.tar.gz) res=${1/.tar.gz/} ;;
         *.tar.xz) res=${1/.tar.xz/} ;;
         *.tar.bz2) res==${1/.tar.bz2/} ;;
-        *) entry "[err:Invalid archive extension for file '${1}']" ; exit 1 ;;
+        *) exit 1 ;;
     esac
     echo "${res}"
 }
@@ -111,7 +111,9 @@ function prepare_build {
 # configure build
 function configure_build {
     entry "Configuring build..."
-    shell_cmd "../configure $@"
+    path="${1}"
+    shift
+    shell_cmd "${path}/configure $@"
     entry "Successfully configured build."
 }
 
@@ -125,7 +127,7 @@ function compile_build {
 # compile build
 function install_build {
     entry "Installing build..."
-    if [[ -z "${1}" ]] ; then
+    if [[ "$#" == 0 ]] ; then
         shell_cmd "make install"
     else
         shell_cmd "make DESTDIR=${1} install"

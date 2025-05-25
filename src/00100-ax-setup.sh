@@ -90,7 +90,7 @@ function setup_ax_binutils_pass_1 {
     unpack_archive "${binutils_archive}"
     change_dir $(archive_name "${binutils_archive}")
     prepare_build
-    configure_build \
+    configure_build ".." \
         "--prefix=${AX_TOOLS}" \
         "--with-sysroot=${AX_ROOT}" \
         "--target=${AX_TGT}" \
@@ -141,11 +141,11 @@ function setup_ax_gcc_pass_1 {
     sed -e '/m64=/s/lib64/lib/' -i.orig gcc/config/i386/t-linux64
 
     prepare_build
-    configure_build \
-        "--target=$AX_TGT" \
-        "--prefix=$AX_TOOLS" \
+    configure_build ".." \
+        "--target=${AX_TGT}" \
+        "--prefix=${AX_TOOLS}" \
         "--with-glibc-version=2.41" \
-        "--with-sysroot=$AX_ROOT" \
+        "--with-sysroot=${AX_ROOT}" \
         "--with-newlib" \
         "--without-headers" \
         "--enable-default-pie" \
@@ -217,9 +217,9 @@ function setup_ax_glibc {
     prepare_build
     entry "Enforcing the use of [path:/usr/sbin] directory"
     echo "rootsbindir=/usr/sbin" > configparms
-    configure_build \
+    configure_build ".." \
       "--prefix=/usr" \
-      "--host=$AX_TGT" \
+      "--host=${AX_TGT}" \
       "--build=$(../scripts/config.guess)" \
       "--disable-nscd" \
       "libc_cv_slibdir=/usr/lib" \
@@ -233,6 +233,37 @@ function setup_ax_glibc {
     entry "Successfully installed [note:glibc]..."
 }
 
+function setup_ax_stdlibcpp {
+    entry "Installing [note:libstdc++]..."
+    entry_up
+
+    gcc_url="https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+    gcc_archive=$(basename "${gcc_url}")
+    gcc_dir=$(archive_name "${gcc_archive}")
+
+    change_dir "${AX_TOOLS}"
+    fetch_url "${gcc_url}" "${gcc_archive}"
+    unpack_archive "${gcc_archive}"
+    change_dir $(archive_name "${gcc_archive}")
+    prepare_build
+    configure_build "../libstdc++-v3"\
+        "--host=${AX_TGT}" \
+        "--build=$(../config.guess)" \
+        "--prefix=/usr" \
+        "--disable-multilib" \
+        "--disable-nls" \
+        "--disable-libstdcxx-pch" \
+        "--with-gxx-include-dir=/tools/${AX_TGT}/include/c++/14.2.0"
+    compile_build
+    install_build "${AX_ROOT}"
+    entry "Removing libtool archive files."
+    shell_cmd "rm -v $AX_ROOT/usr/lib/lib{stdc++{,exp,fs},supc++}.la"
+
+    entry_down
+    entry "Successfully installed [note:libstdc++]..."
+}
+
+
 
 function setup_ax {
     entry "Starting [note:AX system] setup..."
@@ -244,6 +275,7 @@ function setup_ax {
     setup_ax_gcc_pass_1
     setup_ax_linux_api_headers
     setup_ax_glibc
+    setup_ax_stdlibcpp
 
     entry_down
     entry "Completed [note:AX system] setup."
