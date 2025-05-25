@@ -221,6 +221,7 @@ function setup_ax_glibc {
       "--prefix=/usr" \
       "--host=${AX_TGT}" \
       "--build=$(../scripts/config.guess)" \
+      "--with-headers=${AX_ROOT}/usr/include" \
       "--disable-nscd" \
       "libc_cv_slibdir=/usr/lib" \
       "--enable-kernel=5.4"
@@ -262,8 +263,6 @@ function setup_ax_stdlibcpp {
     entry_down
     entry "Successfully installed [note:libstdc++]..."
 }
-
-
 
 function setup_ax {
     entry "Starting [note:AX system] setup..."
