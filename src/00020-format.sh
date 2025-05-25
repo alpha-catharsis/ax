@@ -4,15 +4,29 @@
 
 # format escape
 function fmt_esc {
-    sed -e 's/[][]/\\&/g' <<< "${1}"
+    res=''
+    while IFS= read -n 1 ch ; do
+        if [[ -z "${ch}" ]] ; then
+            res="${res}"$'\n'
+        elif [[ "${ch}" == '[' ]] ; then
+            res="${res}\["
+        elif [[ "${ch}" == ']' ]] ; then
+            res="${res}\]"
+        else
+            res="${res}${ch}"
+        fi
+    done <<< $1
+    echo "${res}"
 }
 
 # formatting rules
 fmt_rules=(
-    "var:${fg_bright_cyan}"
-    "val:${fg_bright_magenta}"
     "dir:${fg_bright_yellow}"
     "err:${fg_bright_red}"
+    "note:${fg_bright_yellow}"
+    "path:${fg_bright_green}"
+    "val:${fg_bright_magenta}"
+    "var:${fg_bright_cyan}"
 )
 
 # build sed formatting commands
@@ -61,7 +75,7 @@ function entry {
                 line_buf="${line_buf}${ch}"
                 col_cnt=$((col_cnt + 1))
                 if [[ "${col_cnt}" == "${max_cols}" ]] ; then
-                    echo "${line_buf}"
+                    echo -n "${line_buf}"
                     line_buf=''
                     col_cnt=0
                 fi
@@ -71,7 +85,11 @@ function entry {
 
     while IFS= read -r -n 1 ch ; do
         case "${state}" in
-            0)  if [[ "${ch}" == '\' ]] ; then
+            0)  if [[ -z "${ch}" ]] ; then
+                    echo -n "${line_buf}"
+                    line_buf=''
+                    col_cnt=0
+                elif [[ "${ch}" == '\' ]] ; then
                     state=1
                 elif [[ "${ch}" == '[' ]] ; then
                     state=2
@@ -97,7 +115,11 @@ function entry {
                else
                    tag="${tag}${ch}"
                fi ;;
-            3) if [[ "${ch}" == '\' ]] ; then
+            3) if [[ -z "${ch}" ]] ; then
+                    echo -n "${line_buf}"
+                    line_buf=''
+                    col_cnt=0
+               elif [[ "${ch}" == '\' ]] ; then
                    state=4
                elif [[ "${ch}" == ']' ]] ; then
                    line_buf="${line_buf}${term_reset}"

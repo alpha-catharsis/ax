@@ -5,7 +5,7 @@
 ##############################
 
 # bash script safe settings
-set -euo pipefail
+set -uo pipefail
 
 ############################
 # 00000-prologue section END

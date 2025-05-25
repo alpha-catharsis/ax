@@ -2,15 +2,7 @@
 # XXXXX-testing section START
 #############################
 
-env_set "XYZ" "abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789"
-entry_up
-env_set "XYZ" "abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789"
-entry_up
-env_set "XYZ" "abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789"
-entry_down
-env_set "XYZ" "abcdefghijklm\\nopq[rstuvxwyz]0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789"
-entry_down
-env_set "XYZ" "abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789abcdefghijklmnopqrstuvxwyz0123456789"
+setup_ax
 
 ###########################
 # XXXXX-testing section END
