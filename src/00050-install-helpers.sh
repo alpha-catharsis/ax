@@ -23,7 +23,8 @@ function shell_cmd {
 # set environment variable
 function env_set {
     export "${1}"="${2}"
-    entry "Set environment variable [var:${1}] to [val:$(fmt_esc ${2})]."
+    val=$(fmt_esc "${2}")
+    entry "Set environment variable [var:${1}] to [val:${val}]."
 }
 
 # create directory
@@ -44,6 +45,12 @@ function change_dir {
     shell_cmd "cd ${1}"
 }
 
+# move file
+function move_file {
+    entry "Moving fild [path:'${1}'] to [path:'${2}']."
+    shell_cmd "mv ${1} ${2}"
+}
+
 # fetch file
 function fetch_url {
     local msg="Fetching file [path:'${1}']..."
@@ -58,12 +65,25 @@ function fetch_url {
 }
 
 # unpack archive
-function unpack_archive {
+function archive_name {
+    res=''
     case "${1}" in
-        *.tar) dir_name=${1/.tar/} ; tar_flags='' ;;
-        *.tar.gz) dir_name=${1/.tar.gz/} ; tar_flags='-z' ;;
-        *.tar.xz) dir_name=${1/.tar.xz/} ; tar_flags='' ;;
-        *.tar.bz2) dir_name==${1/.tar.bz2/} ; tar_flags='j' ;;
+        *.tar) res=${1/.tar/} ;;
+        *.tar.gz) res=${1/.tar.gz/} ;;
+        *.tar.xz) res=${1/.tar.xz/} ;;
+        *.tar.bz2) res==${1/.tar.bz2/} ;;
+        *) entry "[err:Invalid archive extension for file '${1}']" ; exit 1 ;;
+    esac
+    echo "${res}"
+}
+
+function unpack_archive {
+    dir_name=$(archive_name "${1}")
+    case "${1}" in
+        *.tar) tar_flags='' ;;
+        *.tar.gz) tar_flags='z' ;;
+        *.tar.xz) tar_flags='' ;;
+        *.tar.bz2) tar_flags='j' ;;
         *) entry "[err:Invalid archive extension for file '${1}']" ; exit 1 ;;
     esac
     if [[ -d "${dir_name}" ]] ; then
@@ -74,6 +94,33 @@ function unpack_archive {
     entry "Extracting archive [path:'${1}']"
     shell_cmd "tar -x${tar_flags}f ${1}"
     entry "Succesfully extracted archive [path:'${1}']"
+}
+
+# prepare build
+function prepare_build {
+    create_dir "build"
+    change_dir "./build"
+}
+
+# configure build
+function configure_build {
+    entry "Configuring build..."
+    shell_cmd "../configure $@"
+    entry "Successfully configured build."
+}
+
+# compile build
+function compile_build {
+    entry "Compiling build..."
+    shell_cmd "make"
+    entry "Successfully compiled build."
+}
+
+# compile build
+function install_build {
+    entry "Installing build..."
+    shell_cmd "make install"
+    entry "Successfully installed build."
 }
 
 ##################################

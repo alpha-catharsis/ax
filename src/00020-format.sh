@@ -141,6 +141,7 @@ function entry {
     if [[ col_cnt > 0 ]] ; then
         echo "${line_buf}"
     fi
+    sync
 }
 
 ##########################
