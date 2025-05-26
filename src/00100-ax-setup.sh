@@ -258,7 +258,7 @@ function setup_ax_stdlibcpp {
     compile_build
     install_build "${AX_ROOT}"
     entry "Removing libtool archive files."
-    shell_cmd "rm -v $AX_ROOT/usr/lib/{stdc++{,exp,fs},supc++}.la"
+    shell_cmd "rm -v $AX_ROOT/usr/lib{stdc++{,exp,fs},supc++}.la"
 
     entry_down
     entry "Successfully installed [note:libstdc++]..."
