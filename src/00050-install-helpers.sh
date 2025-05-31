@@ -9,7 +9,8 @@ shell_cmd_err=''
 function shell_cmd {
     local out_file=$(mktemp)
     local err_file=$(mktemp)
-    $@ 1>"${out_file}" 2>"${err_file}"
+    local cmd=("$@")
+    "${cmd[@]}" 1> "${out_file}" 2> "${err_file}"
     if [[ "$?" -ne 0 ]] ; then
         errors="$(cat ${err_file})"
         esc_errors=$(fmt_esc "${errors}")
@@ -35,20 +36,23 @@ function create_dir {
         entry "$msg"
     else
         entry "$msg"
-        shell_cmd "mkdir ${1}"
+        cmd=(mkdir "${1}")
+        shell_cmd "${cmd[@]}"
     fi
 }
 
 # change directory
 function change_dir {
     entry "Changing directory to [path:'${1}']."
-    shell_cmd "cd ${1}"
+    cmd=(cd "${1}")
+    shell_cmd "${cmd[@]}"
 }
 
 # move file
 function move_file {
     entry "Moving fild [path:'${1}'] to [path:'${2}']."
-    shell_cmd "mv ${1} ${2}"
+    cmd=(mv "${1}" "${2}")
+    shell_cmd "${cmd[@]}"
 }
 
 # fetch file
@@ -59,7 +63,8 @@ function fetch_url {
         entry "$msg"
     else
         entry "$msg"
-        shell_cmd "curl ${1} -o ${2}"
+        cmd=(curl "${1}" -o "${2}")
+        shell_cmd "${cmd[@]}"
         entry "Succesfully fetched file [path:'${1}']."
     fi
 }
@@ -88,18 +93,21 @@ function unpack_archive {
     esac
     if [[ -d "${dir_name}" ]] ; then
         entry "Archive [path:'${1}'] already extracted, removing existing directory [path:'${dir_name}']..."
-        shell_cmd "rm -rvf ${dir_name}"
+        cmd=(rm -rvf "${dir_name}")
+        shell_cmd "${cmd[@]}"
         entry "Completed removal of directory [path:'${dir_name}']."
     fi
     entry "Extracting archive [path:'${1}']"
-    shell_cmd "tar -x${tar_flags}f ${1}"
+    cmd=(tar -x"${tar_flags}"f "${1}")
+    shell_cmd "${cmd[@]}"
     entry "Succesfully extracted archive [path:'${1}']"
 }
 
 # apply patch
 function apply_patch {
     entry "Applying patch [path:${1}]."
-    shell_cmd "patch -Np1 -i ${1}"
+    cmd=(patch -Np1 -i "${1}")
+    shell_cmd "${cmd[@]}"
 }
 
 # prepare build
@@ -113,14 +121,16 @@ function configure_build {
     entry "Configuring build..."
     path="${1}"
     shift
-    shell_cmd "${path}/configure $@"
+    cmd=(${path}/configure $@)
+    shell_cmd "${cmd[@]}"
     entry "Successfully configured build."
 }
 
 # compile build
 function compile_build {
     entry "Compiling build..."
-    shell_cmd "make"
+    cmd=(make)
+    shell_cmd "${cmd[@]}"
     entry "Successfully compiled build."
 }
 
@@ -128,9 +138,11 @@ function compile_build {
 function install_build {
     entry "Installing build..."
     if [[ "$#" == 0 ]] ; then
-        shell_cmd "make install"
+        cmd=(make install)
+        shell_cmd "${cmd[@]}"
     else
-        shell_cmd "make DESTDIR=${1} install"
+        cmd=(make DESTDIR="${1}" install)
+        shell_cmd "${cmd[@]}"
     fi
     entry "Successfully installed build."
 }

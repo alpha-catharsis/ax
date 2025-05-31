@@ -20,8 +20,8 @@ function setup_ax_init {
     env_set "CONFIG_SITE" "${AX_ROOT}/usr/share/config.site"
     env_set "MAKEFLAGS" "j 4"
 
-    create_dir "$AX_ROOT"
-    create_dir "$AX_TOOLS"
+    create_dir "${AX_ROOT}"
+    create_dir "${AX_TOOLS}"
 
     entry_down
     entry "Completed initial preparations."
@@ -185,12 +185,16 @@ function setup_ax_linux_api_headers {
     unpack_archive "${linux_archive}"
     change_dir $(archive_name "${linux_archive}")
     entry "Cleaning up package"
-    shell_cmd "make mrproper"
+    cmd=(make mrproper)
+    shell_cmd "${cmd[@]}"
     entry "Generating headers"
-    shell_cmd "make headers"
+    cmd=(make headers)
+    shell_cmd "${cmd[@]}"
     entry "Installing headers"
-    find usr/include -type f ! -name '*.h' -delete
-    shell_cmd "cp -rv usr/include ${AX_ROOT}/usr"
+    cmd=(find usr/include -type f ! -name '*.h' -delete)
+    shell_cmd "${cmd[@]}"
+    cmd=(cp -rv usr/include "${AX_ROOT}"/usr)
+    shell_cmd "${cmd[@]}"
 
     entry_down
     entry "Successfully installed [note:linux API headers]..."
@@ -211,8 +215,10 @@ function setup_ax_glibc {
     change_dir $(archive_name "${glibc_archive}")
     fetch_url "${patch_url}" "${patch_file}"
     entry "Creating 64-bit library compatibility links"
-    shell_cmd "ln -sfv ../lib/ld-linux-x86-64.so.2 $AX_ROOT/lib64"
-    shell_cmd "ln -sfv ../lib/ld-linux-x86-64.so.2 $AX_ROOT/lib64/ld-lsb-x86-64.so.3"
+    cmd=(ln -sfv ../lib/ld-linux-x86-64.so.2 "${AX_ROOT}"/lib64)
+    shell_cmd "${cmd[@]}"
+    cmd=(ln -sfv ../lib/ld-linux-x86-64.so.2 "${AX_ROOT}"/lib64/ld-lsb-x86-64.so.3)
+    shell_cmd "${cmd[@]}"
     apply_patch "${patch_file}"
     prepare_build
     entry "Enforcing the use of [path:/usr/sbin] directory"
@@ -228,7 +234,8 @@ function setup_ax_glibc {
     compile_build
     install_build "${AX_ROOT}"
     entry "Fix hardcoded path to the executable loader in [note:ldd] script"
-    shell_cmd "sed /RTLDLIST=/s@/usr@@g -i ${AX_ROOT}/usr/bin/ldd"
+    cmd=(sed /RTLDLIST=/s@/usr@@g -i "${AX_ROOT}"/usr/bin/ldd)
+    shell_cmd "${cmd[@]}"
 
     entry_down
     entry "Successfully installed [note:glibc]..."
@@ -258,7 +265,8 @@ function setup_ax_stdlibcpp {
     compile_build
     install_build "${AX_ROOT}"
     entry "Removing libtool archive files."
-    shell_cmd "rm -v $AX_ROOT/usr/lib/lib{stdc++{,exp,fs},supc++}.la"
+    cmd=(rm -v "${AX_ROOT}"/usr/lib/lib{stdc++{,exp,fs},supc++}.la)
+    shell_cmd "${cmd[@]}"
 
     entry_down
     entry "Successfully installed [note:libstdc++]..."
