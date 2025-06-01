@@ -48,8 +48,8 @@ function setup_ax_binutils_pass_1 {
     entry "Installing [note:binutils (Pass 1)]..."
     entry_up
 
-    binutils_url="https://sourceware.org/pub/binutils/releases/binutils-2.44.tar.xz"
-    binutils_archive=$(basename "${binutils_url}")
+    local binutils_url="https://sourceware.org/pub/binutils/releases/binutils-2.44.tar.xz"
+    local binutils_archive=$(basename "${binutils_url}")
 
     change_dir "${AX_TOOLS}"
     fetch_url "${binutils_url}" "${binutils_archive}"
@@ -76,18 +76,18 @@ function setup_ax_gcc_pass_1 {
     entry "Installing [note:gcc (Pass 1)]..."
     entry_up
 
-    gcc_url="https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
-    gcc_archive=$(basename "${gcc_url}")
-    gcc_dir=$(archive_name "${gcc_archive}")
-    mpfr_url="https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz"
-    mpfr_archive=$(basename "${mpfr_url}")
-    mpfr_dir=$(archive_name "${mpfr_archive}")
-    gmp_url="https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
-    gmp_archive=$(basename "${gmp_url}")
-    gmp_dir=$(archive_name "${gmp_archive}")
-    mpc_url="https://ftp.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz"
-    mpc_archive=$(basename "${mpc_url}")
-    mpc_dir=$(archive_name "${mpc_archive}")
+    local gcc_url="https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+    local gcc_archive=$(basename "${gcc_url}")
+    local gcc_dir=$(archive_name "${gcc_archive}")
+    local mpfr_url="https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz"
+    local mpfr_archive=$(basename "${mpfr_url}")
+    local mpfr_dir=$(archive_name "${mpfr_archive}")
+    local gmp_url="https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz"
+    local gmp_archive=$(basename "${gmp_url}")
+    local gmp_dir=$(archive_name "${gmp_archive}")
+    local mpc_url="https://ftp.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz"
+    local mpc_archive=$(basename "${mpc_url}")
+    local mpc_dir=$(archive_name "${mpc_archive}")
 
     change_dir "${AX_TOOLS}"
     fetch_url "${gcc_url}" "${gcc_archive}"
@@ -143,15 +143,15 @@ function setup_ax_linux_api_headers {
     entry "Installing [note:linux API headers]..."
     entry_up
 
-    linux_url="https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.14.6.tar.xz"
-    linux_archive=$(basename "${linux_url}")
+    local linux_url="https://www.kernel.org/pub/linux/kernel/v6.x/linux-6.14.6.tar.xz"
+    local linux_archive=$(basename "${linux_url}")
 
     change_dir "${AX_TOOLS}"
     fetch_url "${linux_url}" "${linux_archive}"
     unpack_archive "${linux_archive}"
     change_dir $(archive_name "${linux_archive}")
     entry "Cleaning up package"
-    cmd=(make mrproper)
+    local cmd=(make mrproper)
     shell_cmd "${cmd[@]}"
     entry "Generating headers"
     cmd=(make headers)
@@ -159,8 +159,13 @@ function setup_ax_linux_api_headers {
     entry "Installing headers"
     cmd=(find usr/include -type f ! -name '*.h' -delete)
     shell_cmd "${cmd[@]}"
-    cmd=(cp -rv usr/include "${AX_ROOT}"/usr)
+
+    local install_dir="${AX_PKGS}/linux-headers/6.14.6"
+    create_dirs "${install_dir}/usr"
+    cmd=(cp -r usr/include "${install_dir}/usr")
     shell_cmd "${cmd[@]}"
+
+    embed_pkg "linux-headers" "6.14.6" "${AX_ROOT}"
 
     entry_down
     entry "Successfully installed [note:linux API headers]..."
@@ -170,10 +175,10 @@ function setup_ax_glibc {
     entry "Installing [note:glibc]..."
     entry_up
 
-    glibc_url="https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz"
-    glibc_archive=$(basename "${glibc_url}")
-    patch_url="https://www.linuxfromscratch.org/patches/lfs/development/glibc-2.41-fhs-1.patch"
-    patch_file=$(basename "${patch_url}")
+    local glibc_url="https://ftp.gnu.org/gnu/glibc/glibc-2.41.tar.xz"
+    local glibc_archive=$(basename "${glibc_url}")
+    local patch_url="https://www.linuxfromscratch.org/patches/lfs/development/glibc-2.41-fhs-1.patch"
+    local patch_file=$(basename "${patch_url}")
 
     change_dir "${AX_TOOLS}"
     fetch_url "${glibc_url}" "${glibc_archive}"
@@ -181,7 +186,7 @@ function setup_ax_glibc {
     change_dir $(archive_name "${glibc_archive}")
     fetch_url "${patch_url}" "${patch_file}"
     entry "Creating 64-bit library compatibility links"
-    cmd=(ln -sfv ../lib/ld-linux-x86-64.so.2 "${AX_ROOT}"/lib64)
+    local cmd=(ln -sfv ../lib/ld-linux-x86-64.so.2 "${AX_ROOT}"/lib64)
     shell_cmd "${cmd[@]}"
     cmd=(ln -sfv ../lib/ld-linux-x86-64.so.2 "${AX_ROOT}"/lib64/ld-lsb-x86-64.so.3)
     shell_cmd "${cmd[@]}"
@@ -198,7 +203,8 @@ function setup_ax_glibc {
       "libc_cv_slibdir=/usr/lib" \
       "--enable-kernel=5.4"
     compile_build
-    install_dir="${AX_PKGS}/glibc/2.41"
+
+    local install_dir="${AX_PKGS}/glibc/2.41"
     create_dirs "${install_dir}"
     install_build "${install_dir}"
     entry "Fix hardcoded path to the executable loader in [note:ldd] script"
@@ -215,9 +221,9 @@ function setup_ax_stdlibcpp {
     entry "Installing [note:libstdc++]..."
     entry_up
 
-    gcc_url="https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
-    gcc_archive=$(basename "${gcc_url}")
-    gcc_dir=$(archive_name "${gcc_archive}")
+    local gcc_url="https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+    local gcc_archive=$(basename "${gcc_url}")
+    local gcc_dir=$(archive_name "${gcc_archive}")
 
     change_dir "${AX_TOOLS}"
     fetch_url "${gcc_url}" "${gcc_archive}"
@@ -233,10 +239,15 @@ function setup_ax_stdlibcpp {
         "--disable-libstdcxx-pch" \
         "--with-gxx-include-dir=/tools/${AX_TGT}/include/c++/14.2.0"
     compile_build
-    install_build "${AX_ROOT}"
+
+    local install_dir="${AX_PKGS}/libstdc++/14.2.0"
+    create_dirs "${install_dir}"
+    install_build "${install_dir}"
     entry "Removing libtool archive files."
-    cmd=(rm -v "${AX_ROOT}"/usr/lib/lib{stdc++{,exp,fs},supc++}.la)
+    local cmd=(rm -v "${install_dir}"/usr/lib/lib{stdc++{,exp,fs},supc++}.la)
     shell_cmd "${cmd[@]}"
+
+    embed_pkg "libstdc++" "14.2.0" "${AX_ROOT}"
 
     entry_down
     entry "Successfully installed [note:libstdc++]..."
@@ -252,7 +263,7 @@ function setup_ax {
     setup_ax_gcc_pass_1
     setup_ax_linux_api_headers
     setup_ax_glibc
-    setup_ax_stdlibcpp
+    # setup_ax_stdlibcpp
 
     entry_down
     entry "Completed [note:AX system] setup."
