@@ -172,11 +172,13 @@ function embed_pkg {
     entry "Embedding package..."
     entry_up
     entry "Finding files to embed..."
-    pushd "${pkg_dir}" > /dev/null
-    local cmd=(find . -type f)
+    local cmd=(pushd "${pkg_dir}")
     shell_cmd "${cmd[@]}"
-    popd > /dev/null
+    cmd=(find . -type f)
+    shell_cmd "${cmd[@]}"
     local pkg_files=($shell_cmd_out)
+    cmd=(popd)
+    shell_cmd "${cmd[@]}"
     for pkg_file in "${pkg_files[@]}" ; do
         local tgt_file="${tgt_dir}/${pkg_file}"
         if [[ -e "${tgt_file}" ]] ; then
@@ -193,16 +195,19 @@ function embed_pkg {
     for pkg_file in "${pkg_files[@]}" ; do
         local src_file="${pkg_dir}/${pkg_file}"
         local tgt_file="${tgt_dir}/${pkg_file}"
-        mkdir -p $(dirname "${tgt_file}")
+        cmd=(mkdir -p $(dirname "${tgt_file}"))
+        shell_cmd "${cmd[@]}"
         if mutable_path "${tgt_file}" ; then
             if [[ -e "${tgt_file}" ]] ; then
                 skip_cnt=$((skip_cnt + 1))
             else
-                cp "${src_file}" "${tgt_file}"
+                local cmd=(cp "${src_file}" "${tgt_file}")
+                shell_cmd "${cmd[@]}"
                 copy_cnt=$((copy_cnt + 1))
             fi
         else
-            ln -sr "${src_file}" "${tgt_file}"
+            local cmd=(ln -sr "${src_file}" "${tgt_file}")
+            shell_cmd "${cmd[@]}"
             link_cnt=$((link_cnt + 1))
         fi
     done
@@ -221,11 +226,13 @@ function extract_pkg {
     entry "Extracting package..."
     entry_up
     entry "Finding files to extract..."
-    pushd "${pkg_dir}" > /dev/null
-    local cmd=(find . -type f)
+    local cmd=(pushd "${pkg_dir}")
     shell_cmd "${cmd[@]}"
-    popd > /dev/null
+    cmd=(find . -type f)
+    shell_cmd "${cmd[@]}"
     local pkg_files=($shell_cmd_out)
+    cmd=(popd)
+    shell_cmd "${cmd[@]}"
     for pkg_file in "${pkg_files[@]}" ; do
         local tgt_file="${tgt_dir}/${pkg_file}"
         if ! [[ -e "${tgt_file}" ]] ; then
@@ -247,11 +254,14 @@ function extract_pkg {
         local tgt_file="${tgt_dir}/${pkg_file}"
         if mutable_path "${tgt_file}" ; then
             local tomb_file="${tomb_path}/${pkg_file}"
-            mkdir -p $(dirname "${tomb_file}")
-            cp "${tgt_file}" "${tomb_file}"
+            cmd=(mkdir -p $(dirname "${tomb_file}"))
+            shell_cmd "${cmd[@]}"
+            cmd=(cp "${tgt_file}" "${tomb_file}")
+            shell_cmd "${cmd[@]}"
             bury_cnt=$((rm_cnt + 1))
         fi
-        rm "${tgt_file}"
+        cmd=(rm "${tgt_file}")
+        shell_cmd "${cmd[@]}"
         rm_cnt=$((rm_cnt + 1))
     done
     entry "Removed [note:$rm_cnt] files"

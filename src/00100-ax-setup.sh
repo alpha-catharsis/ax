@@ -263,7 +263,7 @@ function setup_ax {
     setup_ax_gcc_pass_1
     setup_ax_linux_api_headers
     setup_ax_glibc
-    # setup_ax_stdlibcpp
+    setup_ax_stdlibcpp
 
     entry_down
     entry "Completed [note:AX system] setup."
