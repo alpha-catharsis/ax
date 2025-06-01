@@ -17,7 +17,9 @@ function setup_ax_init {
     env_set "AX_TGT" "$(uname -m)-ax-linux-gnu"
     env_set "AX_TOOLS" "/tmp/ax/tools"
     env_set "AX_PKGS" "/tmp/ax/pkgs"
-    env_set "AX_CEM" "/tmp/ax/pkgs/cemetery"
+    env_set "AX_DESCS" "${AX_PKGS}/descs"
+    env_set "AX_INSTS" "${AX_PKGS}/insts"
+    env_set "AX_CEM" "${AX_PKGS}/cemetery"
     env_set "PATH" "$(fmt_esc ${AX_TOOLS}/bin:$PATH)"
     env_set "CONFIG_SITE" "${AX_ROOT}/usr/share/config.site"
     env_set "MAKEFLAGS" "j 4"
@@ -33,6 +35,8 @@ function setup_ax_dirs {
     create_dir "${AX_ROOT}"
     create_dir "${AX_TOOLS}"
     create_dir "${AX_PKGS}"
+    create_dir "${AX_DESCS}"
+    create_dir "${AX_INSTS}"
     create_dir "${AX_CEM}"
 
     create_dir "${AX_ROOT}/lib"
@@ -42,6 +46,31 @@ function setup_ax_dirs {
 
     entry_down
     entry "Completed AX directories creation."
+}
+
+function setup_pkg_descs {
+    entry "Installing package descriptors..."
+    entry_up
+
+    change_dir "${AX_DESCS}"
+    entry "Fetching tarball..."
+    local desc_archive="ax-pkgs-descs.tar.gz"
+    local cmd=(curl -L https://github.com/alpha-catharsis/ax-pkgs/tarball/master -o "${desc_archive}")
+    shell_cmd "${cmd[@]}"
+    entry "Extracting tarball..."
+    local cmd=(tar -xzf "${desc_archive}" --strip-components=1)
+    shell_cmd "${cmd[@]}"
+    entry "Cleaning up..."
+    for desc in *.sh ; do
+        mv "${desc}" "${desc%.sh}"
+    done
+    cmd=(rm "LICENSE")
+    shell_cmd "${cmd[@]}"
+    cmd=(rm "${desc_archive}")
+    shell_cmd "${cmd[@]}"
+
+    entry_down
+    entry "Completed installation of package descriptors."
 }
 
 function setup_ax_binutils_pass_1 {
@@ -160,7 +189,7 @@ function setup_ax_linux_api_headers {
     cmd=(find usr/include -type f ! -name '*.h' -delete)
     shell_cmd "${cmd[@]}"
 
-    local install_dir="${AX_PKGS}/linux-headers/6.14.6"
+    local install_dir="${AX_INSTS}/linux-headers/6.14.6"
     create_dirs "${install_dir}/usr"
     cmd=(cp -r usr/include "${install_dir}/usr")
     shell_cmd "${cmd[@]}"
@@ -204,7 +233,7 @@ function setup_ax_glibc {
       "--enable-kernel=5.4"
     compile_build
 
-    local install_dir="${AX_PKGS}/glibc/2.41"
+    local install_dir="${AX_INSTS}/glibc/2.41"
     create_dirs "${install_dir}"
     install_build "${install_dir}"
     entry "Fix hardcoded path to the executable loader in [note:ldd] script"
@@ -240,7 +269,7 @@ function setup_ax_stdlibcpp {
         "--with-gxx-include-dir=/tools/${AX_TGT}/include/c++/14.2.0"
     compile_build
 
-    local install_dir="${AX_PKGS}/libstdc++/14.2.0"
+    local install_dir="${AX_INSTS}/libstdc++/14.2.0"
     create_dirs "${install_dir}"
     install_build "${install_dir}"
     entry "Removing libtool archive files."
@@ -259,11 +288,12 @@ function setup_ax {
 
     setup_ax_init
     setup_ax_dirs
-    setup_ax_binutils_pass_1
-    setup_ax_gcc_pass_1
-    setup_ax_linux_api_headers
-    setup_ax_glibc
-    setup_ax_stdlibcpp
+    setup_pkg_descs
+    # setup_ax_binutils_pass_1
+    # setup_ax_gcc_pass_1
+    # setup_ax_linux_api_headers
+    # setup_ax_glibc
+    # setup_ax_stdlibcpp
 
     entry_down
     entry "Completed [note:AX system] setup."

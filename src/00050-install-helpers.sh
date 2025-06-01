@@ -167,7 +167,7 @@ function mutable_path {
 
 # embed package
 function embed_pkg {
-    local pkg_dir="${AX_PKGS}/${1}/${2}"
+    local pkg_dir="${AX_INSTS}/${1}/${2}"
     local tgt_dir="${3}"
     entry "Embedding package..."
     entry_up
@@ -220,7 +220,7 @@ function embed_pkg {
 
 # extract package
 function extract_pkg {
-    local pkg_dir="${AX_PKGS}/${1}/${2}"
+    local pkg_dir="${AX_INSTS}/${1}/${2}"
     local cem_dir="${AX_CEM}/${1}/${2}"
     local tgt_dir="${3}"
     entry "Extracting package..."
