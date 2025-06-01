@@ -16,66 +16,32 @@ function setup_ax_init {
     env_set "LC_ALL" "POSIX"
     env_set "AX_TGT" "$(uname -m)-ax-linux-gnu"
     env_set "AX_TOOLS" "/tmp/ax/tools"
+    env_set "AX_PKGS" "/tmp/ax/pkgs"
+    env_set "AX_CEM" "/tmp/ax/pkgs/cemetery"
     env_set "PATH" "$(fmt_esc ${AX_TOOLS}/bin:$PATH)"
     env_set "CONFIG_SITE" "${AX_ROOT}/usr/share/config.site"
     env_set "MAKEFLAGS" "j 4"
-
-    create_dir "${AX_ROOT}"
-    create_dir "${AX_TOOLS}"
 
     entry_down
     entry "Completed initial preparations."
 }
 
-function setup_ax_fhs {
-    entry "Creating Filesystem Hierarchy Standard (FHS)..."
+function setup_ax_dirs {
+    entry "Creating AX directories..."
     entry_up
 
-    create_dir "${AX_ROOT}/bin"
-    create_dir "${AX_ROOT}/boot"
-    create_dir "${AX_ROOT}/dev"
-    create_dir "${AX_ROOT}/etc"
-    create_dir "${AX_ROOT}/etc/opt"
-    create_dir "${AX_ROOT}/home"
+    create_dir "${AX_ROOT}"
+    create_dir "${AX_TOOLS}"
+    create_dir "${AX_PKGS}"
+    create_dir "${AX_CEM}"
+
     create_dir "${AX_ROOT}/lib"
     create_dir "${AX_ROOT}/lib64"
-    create_dir "${AX_ROOT}/media"
-    create_dir "${AX_ROOT}/mnt"
-    create_dir "${AX_ROOT}/opt"
-    create_dir "${AX_ROOT}/root"
-    create_dir "${AX_ROOT}/run"
-    create_dir "${AX_ROOT}/sbin"
-    create_dir "${AX_ROOT}/srv"
-    create_dir "${AX_ROOT}/tmp"
     create_dir "${AX_ROOT}/usr"
-    create_dir "${AX_ROOT}/usr/bin"
     create_dir "${AX_ROOT}/usr/include"
-    create_dir "${AX_ROOT}/usr/lib"
-    create_dir "${AX_ROOT}/usr/libexec"
-    create_dir "${AX_ROOT}/usr/local"
-    create_dir "${AX_ROOT}/usr/local/bin"
-    create_dir "${AX_ROOT}/usr/local/etc"
-    create_dir "${AX_ROOT}/usr/local/games"
-    create_dir "${AX_ROOT}/usr/local/include"
-    create_dir "${AX_ROOT}/usr/local/lib"
-    create_dir "${AX_ROOT}/usr/local/man"
-    create_dir "${AX_ROOT}/usr/local/sbin"
-    create_dir "${AX_ROOT}/usr/local/share"
-    create_dir "${AX_ROOT}/usr/local/src"
-    create_dir "${AX_ROOT}/usr/sbin"
-    create_dir "${AX_ROOT}/usr/share"
-    create_dir "${AX_ROOT}/usr/src"
-    create_dir "${AX_ROOT}/var"
-    create_dir "${AX_ROOT}/var/lib"
-    create_dir "${AX_ROOT}/var/lock"
-    create_dir "${AX_ROOT}/var/log"
-    create_dir "${AX_ROOT}/var/opt"
-    create_dir "${AX_ROOT}/var/run"
-    create_dir "${AX_ROOT}/var/spool"
-    create_dir "${AX_ROOT}/var/tmp'"
 
     entry_down
-    entry "Completed FHS creation."
+    entry "Completed AX directories creation."
 }
 
 function setup_ax_binutils_pass_1 {
@@ -232,10 +198,14 @@ function setup_ax_glibc {
       "libc_cv_slibdir=/usr/lib" \
       "--enable-kernel=5.4"
     compile_build
-    install_build "${AX_ROOT}"
+    install_dir="${AX_PKGS}/glibc/2.41"
+    create_dirs "${install_dir}"
+    install_build "${install_dir}"
     entry "Fix hardcoded path to the executable loader in [note:ldd] script"
-    cmd=(sed /RTLDLIST=/s@/usr@@g -i "${AX_ROOT}"/usr/bin/ldd)
+    cmd=(sed /RTLDLIST=/s@/usr@@g -i "${install_dir}"/usr/bin/ldd)
     shell_cmd "${cmd[@]}"
+
+    embed_pkg "glibc" "2.41" "${AX_ROOT}"
 
     entry_down
     entry "Successfully installed [note:glibc]..."
@@ -277,7 +247,7 @@ function setup_ax {
     entry_up
 
     setup_ax_init
-    setup_ax_fhs
+    setup_ax_dirs
     setup_ax_binutils_pass_1
     setup_ax_gcc_pass_1
     setup_ax_linux_api_headers

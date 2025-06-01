@@ -24,7 +24,7 @@ function shell_cmd {
 # set environment variable
 function env_set {
     export "${1}"="${2}"
-    val=$(fmt_esc "${2}")
+    local val=$(fmt_esc "${2}")
     entry "Set environment variable [var:${1}] to [val:${val}]."
 }
 
@@ -36,25 +36,37 @@ function create_dir {
         entry "$msg"
     else
         entry "$msg"
-        cmd=(mkdir "${1}")
+        local cmd=(mkdir "${1}")
         shell_cmd "${cmd[@]}"
     fi
+}
+
+function create_dirs {
+    entry "Creating directorys [path:'${1}']."
+    local cmd=(mkdir -p "${1}")
+    shell_cmd "${cmd[@]}"
 }
 
 # change directory
 function change_dir {
     entry "Changing directory to [path:'${1}']."
-    cmd=(cd "${1}")
+    local cmd=(cd "${1}")
     shell_cmd "${cmd[@]}"
 }
 
 # move file
 function move_file {
-    entry "Moving fild [path:'${1}'] to [path:'${2}']."
-    cmd=(mv "${1}" "${2}")
+    entry "Moving file [path:'${1}'] to [path:'${2}']."
+    local cmd=(mv "${1}" "${2}")
     shell_cmd "${cmd[@]}"
 }
 
+# create simlink
+function create_simlink {
+    entry "Creating symbolic link from [path:'${1}'] to [path:'${2}']."
+    local cmd=(ln -s "${1}" "${2}")
+    shell_cmd "${cmd[@]}"
+}
 # fetch file
 function fetch_url {
     local msg="Fetching file [path:'${1}']..."
@@ -63,7 +75,7 @@ function fetch_url {
         entry "$msg"
     else
         entry "$msg"
-        cmd=(curl "${1}" -o "${2}")
+        local cmd=(curl "${1}" -o "${2}")
         shell_cmd "${cmd[@]}"
         entry "Succesfully fetched file [path:'${1}']."
     fi
@@ -71,7 +83,7 @@ function fetch_url {
 
 # unpack archive
 function archive_name {
-    res=''
+    local res=''
     case "${1}" in
         *.tar) res=${1/.tar/} ;;
         *.tar.gz) res=${1/.tar.gz/} ;;
@@ -83,7 +95,7 @@ function archive_name {
 }
 
 function unpack_archive {
-    dir_name=$(archive_name "${1}")
+    local dir_name=$(archive_name "${1}")
     case "${1}" in
         *.tar) tar_flags='' ;;
         *.tar.gz) tar_flags='z' ;;
@@ -93,12 +105,12 @@ function unpack_archive {
     esac
     if [[ -d "${dir_name}" ]] ; then
         entry "Archive [path:'${1}'] already extracted, removing existing directory [path:'${dir_name}']..."
-        cmd=(rm -rvf "${dir_name}")
+        local cmd=(rm -rvf "${dir_name}")
         shell_cmd "${cmd[@]}"
         entry "Completed removal of directory [path:'${dir_name}']."
     fi
     entry "Extracting archive [path:'${1}']"
-    cmd=(tar -x"${tar_flags}"f "${1}")
+    local cmd=(tar -x"${tar_flags}"f "${1}")
     shell_cmd "${cmd[@]}"
     entry "Succesfully extracted archive [path:'${1}']"
 }
@@ -106,7 +118,7 @@ function unpack_archive {
 # apply patch
 function apply_patch {
     entry "Applying patch [path:${1}]."
-    cmd=(patch -Np1 -i "${1}")
+    local cmd=(patch -Np1 -i "${1}")
     shell_cmd "${cmd[@]}"
 }
 
@@ -119,9 +131,9 @@ function prepare_build {
 # configure build
 function configure_build {
     entry "Configuring build..."
-    path="${1}"
+    local path="${1}"
     shift
-    cmd=(${path}/configure $@)
+    local cmd=(${path}/configure $@)
     shell_cmd "${cmd[@]}"
     entry "Successfully configured build."
 }
@@ -129,7 +141,7 @@ function configure_build {
 # compile build
 function compile_build {
     entry "Compiling build..."
-    cmd=(make)
+    local cmd=(make)
     shell_cmd "${cmd[@]}"
     entry "Successfully compiled build."
 }
@@ -138,13 +150,114 @@ function compile_build {
 function install_build {
     entry "Installing build..."
     if [[ "$#" == 0 ]] ; then
-        cmd=(make install)
+        local cmd=(make install)
         shell_cmd "${cmd[@]}"
     else
-        cmd=(make DESTDIR="${1}" install)
+        local cmd=(make DESTDIR="${1}" install)
         shell_cmd "${cmd[@]}"
     fi
     entry "Successfully installed build."
+}
+
+# mutable path
+function mutable_path {
+    local path=$(realpath -s "${1}")
+    [[ "${path}" == "${AX_ROOT}"/etc/* || "${path}" == "${AX_ROOT}"/var/* ]]
+}
+
+# embed package
+function embed_pkg {
+    local pkg_dir="${AX_PKGS}/${1}/${2}"
+    local tgt_dir="${3}"
+    entry "Embedding package..."
+    entry_up
+    entry "Finding files to embed..."
+    pushd "${pkg_dir}" > /dev/null
+    local cmd=(find . -type f)
+    shell_cmd "${cmd[@]}"
+    popd > /dev/null
+    local pkg_files=($shell_cmd_out)
+    for pkg_file in "${pkg_files[@]}" ; do
+        local tgt_file="${tgt_dir}/${pkg_file}"
+        if [[ -e "${tgt_file}" ]] ; then
+            if ! mutable_path "${tgt_file}" ; then
+                entry "[err:conflict for file] [path:${tgt_file}]"
+                exit 1
+            fi
+        fi
+    done
+    entry "Embedding files..."
+    local copy_cnt=0
+    local skip_cnt=0
+    local link_cnt=0
+    for pkg_file in "${pkg_files[@]}" ; do
+        local src_file="${pkg_dir}/${pkg_file}"
+        local tgt_file="${tgt_dir}/${pkg_file}"
+        mkdir -p $(dirname "${tgt_file}")
+        if mutable_path "${tgt_file}" ; then
+            if [[ -e "${tgt_file}" ]] ; then
+                skip_cnt=$((skip_cnt + 1))
+            else
+                cp "${src_file}" "${tgt_file}"
+                copy_cnt=$((copy_cnt + 1))
+            fi
+        else
+            ln -sr "${src_file}" "${tgt_file}"
+            link_cnt=$((link_cnt + 1))
+        fi
+    done
+    entry "Copied [note:$copy_cnt] files"
+    entry "Skipped [note:$skip_cnt] files"
+    entry "Created [note:$link_cnt] symbolic links"
+    entry_down
+    entry "Successfully embedded package."
+}
+
+# extract package
+function extract_pkg {
+    local pkg_dir="${AX_PKGS}/${1}/${2}"
+    local cem_dir="${AX_CEM}/${1}/${2}"
+    local tgt_dir="${3}"
+    entry "Extracting package..."
+    entry_up
+    entry "Finding files to extract..."
+    pushd "${pkg_dir}" > /dev/null
+    local cmd=(find . -type f)
+    shell_cmd "${cmd[@]}"
+    popd > /dev/null
+    local pkg_files=($shell_cmd_out)
+    for pkg_file in "${pkg_files[@]}" ; do
+        local tgt_file="${tgt_dir}/${pkg_file}"
+        if ! [[ -e "${tgt_file}" ]] ; then
+            entry "[err:missing file] [path:${tgt_file}]"
+            exit 1
+        fi
+        if ! [[ -L "${tgt_file}" ]] ; then
+            if ! mutable_path "${tgt_file}" ; then
+                entry "[err:file] [path:${tgt_file}] [err:is not a symbolic link]"
+                exit 1
+            fi
+        fi
+    done
+    entry "Removing files..."
+    local rm_cnt=0
+    local bury_cnt=0
+    local tomb_path="${cem_dir}"/$(date +"%Y-%m-%dT%H_%M_%S_%N")/
+    for pkg_file in "${pkg_files[@]}" ; do
+        local tgt_file="${tgt_dir}/${pkg_file}"
+        if mutable_path "${tgt_file}" ; then
+            local tomb_file="${tomb_path}/${pkg_file}"
+            mkdir -p $(dirname "${tomb_file}")
+            cp "${tgt_file}" "${tomb_file}"
+            bury_cnt=$((rm_cnt + 1))
+        fi
+        rm "${tgt_file}"
+        rm_cnt=$((rm_cnt + 1))
+    done
+    entry "Removed [note:$rm_cnt] files"
+    entry "Buried [note:$bury_cnt] files"
+    entry_down
+    entry "Successfully extracted package."
 }
 
 ##################################
