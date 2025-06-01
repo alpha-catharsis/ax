@@ -294,6 +294,7 @@ function setup_ax {
     # setup_ax_linux_api_headers
     # setup_ax_glibc
     # setup_ax_stdlibcpp
+    install_pkg linux-headers-6.14.6
 
     entry_down
     entry "Completed [note:AX system] setup."

@@ -7,8 +7,10 @@ function install_pkg {
     entry_up
 
     local desc_path="${AX_DESCS}/${1}"
-    if ! [[ -e desc_path ]] ; then
+    if ! [[ -e "${desc_path}" ]] ; then
         entry "[err:Cannot load package descriptor] [path:${desc_path}]"
+        echo "${desc_path}"
+        exit 1
     fi
     unset pkg_name
     unset pkg_ver
@@ -18,17 +20,21 @@ function install_pkg {
     entry "Loading package descriptor [path:${desc_path}]."
     local cmd=(source "${desc_path}")
     shell_cmd "${cmd[@]}"
-    local pkg_build_dir="/tmp/ax-build"
-    create_dir "${pkg_build_dir}"
-    change_dir "${pkg_build_dir}"
+    local tmp_pkg_dir=$(mktemp -d)
+    change_dir "${tmp_pkg_dir}"
     entry "Fetching package."
-    pkg_fetch
+    local cmd=(pkg_fetch)
+    shell_cmd "${cmd[@]}"
     entry "Preparing package."
-    pkg_prepare
+    cmd=(pkg_prepare)
+    shell_cmd "${cmd[@]}"
     entry "Installing package."
-    pkg_install
-    change_dir ".."
-    local cmd=(rm -rf "${pkg_build_dir}")
+    cmd=(pkg_install ${AX_ROOT})
+    shell_cmd "${cmd[@]}"
+    entry "Cleaning up."
+    local cmd=(cd ..)
+    shell_cmd "${cmd[@]}"
+    local cmd=(rm -rf "${tmp_pkg_dir}")
     shell_cmd "${cmd[@]}"
 
     entry_down
