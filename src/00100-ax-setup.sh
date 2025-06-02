@@ -243,7 +243,7 @@ function setup_ax_glibc {
     embed_pkg "glibc" "2.41" "${AX_ROOT}"
 
     entry_down
-    entry "Successfully installed [note:glibc]..."
+    entry "Successfully installed [note:glibc]."
 }
 
 function setup_ax_stdlibcpp {
@@ -289,12 +289,13 @@ function setup_ax {
     setup_ax_init
     setup_ax_dirs
     setup_pkg_descs
-    # setup_ax_binutils_pass_1
-    # setup_ax_gcc_pass_1
-    # setup_ax_linux_api_headers
-    # setup_ax_glibc
-    # setup_ax_stdlibcpp
-    install_pkg linux-headers-6.14.6
+    setup_ax_binutils_pass_1
+    setup_ax_gcc_pass_1
+    install_pkg "linux-headers" "6.14.6"
+    embed_pkg "linux-headers" "6.14.6" "${AX_ROOT}"
+    install_pkg "glibc" "2.41"
+    embed_pkg "glibc" "2.41" "${AX_ROOT}"
+    setup_ax_stdlibcpp
 
     entry_down
     entry "Completed [note:AX system] setup."

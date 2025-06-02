@@ -3,39 +3,60 @@
 ################################
 
 function install_pkg {
-    entry "Installing package [note:${1}]..."
+    local pkg_ext_name="${1}"
+    local pkg_ver="${2}"
+    entry "Installing package [note:${pkg_ext_name}:${pkg_ver}]..."
     entry_up
 
-    local desc_path="${AX_DESCS}/${1}"
+    local desc_path="${AX_DESCS}/${pkg_ext_name}"
     if ! [[ -e "${desc_path}" ]] ; then
         entry "[err:Cannot load package descriptor] [path:${desc_path}]"
-        echo "${desc_path}"
         exit 1
     fi
+
     unset pkg_name
-    unset pkg_ver
+    unset pkg_vers
     unset pkg_fetch
     unset pkg_prepare
     unset pkg_install
-    entry "Loading package descriptor [path:${desc_path}]."
-    local cmd=(source "${desc_path}")
+    source "${desc_path}"
+
+    local supported=0
+    for ver in "${pkg_vers[@]}" ; do
+        if [[ "${pkg_ver}" == "${ver}" ]] ; then
+            supported=1
+            break
+        fi
+    done
+    if ((supported == 0)) ; then
+        entry "[err:unsupported package version] [note:${pkg_ver}]"
+        exit 1
+    fi
+
     shell_cmd "${cmd[@]}"
     local tmp_pkg_dir=$(mktemp -d)
+    trap "rm -rf ${tmp_pkg_dir}" EXIT
     change_dir "${tmp_pkg_dir}"
+
     entry "Fetching package."
-    local cmd=(pkg_fetch)
-    shell_cmd "${cmd[@]}"
+    entry_up
+    pkg_fetch "${pkg_ver}"
+    entry_down
     entry "Preparing package."
-    cmd=(pkg_prepare)
-    shell_cmd "${cmd[@]}"
+    entry_up
+    pkg_prepare "${pkg_ver}"
+    entry_down
     entry "Installing package."
-    cmd=(pkg_install ${AX_ROOT})
-    shell_cmd "${cmd[@]}"
+    entry_up
+    pkg_install "${pkg_ver}"
+    entry_down
     entry "Cleaning up."
     local cmd=(cd ..)
     shell_cmd "${cmd[@]}"
     local cmd=(rm -rf "${tmp_pkg_dir}")
     shell_cmd "${cmd[@]}"
+
+    trap - EXIT
 
     entry_down
     entry "Completed installation of package [note:${1}]..."

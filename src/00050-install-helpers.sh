@@ -18,7 +18,9 @@ function shell_cmd {
         exit 1
     fi
     shell_cmd_out=$(tr -d '\0' < "${out_file}")
+    rm -f "${out_file}"
     shell_cmd_err=$(tr -d '\0' < "${err_file}")
+    rm -f "${err_file}"
 }
 
 # set environment variable
@@ -115,6 +117,22 @@ function unpack_archive {
     entry "Succesfully extracted archive [path:'${1}']"
 }
 
+function unpack_archive_stripped {
+    local dir_name=$(archive_name "${1}")
+    case "${1}" in
+        *.tar) tar_flags='' ;;
+        *.tar.gz) tar_flags='z' ;;
+        *.tar.xz) tar_flags='' ;;
+        *.tar.bz2) tar_flags='j' ;;
+        *) entry "[err:Invalid archive extension for file '${1}']" ; exit 1 ;;
+    esac
+    entry "Extracting archive [path:'${1}']"
+    local cmd=(tar -x"${tar_flags}"f "${1}" --strip-components=1)
+    shell_cmd "${cmd[@]}"
+    entry "Succesfully extracted archive [path:'${1}']"
+}
+
+
 # apply patch
 function apply_patch {
     entry "Applying patch [path:${1}]."
@@ -172,13 +190,10 @@ function embed_pkg {
     entry "Embedding package..."
     entry_up
     entry "Finding files to embed..."
-    local cmd=(pushd "${pkg_dir}")
-    shell_cmd "${cmd[@]}"
+    change_dir "${pkg_dir}"
     cmd=(find . -type f)
     shell_cmd "${cmd[@]}"
     local pkg_files=($shell_cmd_out)
-    cmd=(popd)
-    shell_cmd "${cmd[@]}"
     for pkg_file in "${pkg_files[@]}" ; do
         local tgt_file="${tgt_dir}/${pkg_file}"
         if [[ -e "${tgt_file}" ]] ; then
@@ -226,13 +241,10 @@ function extract_pkg {
     entry "Extracting package..."
     entry_up
     entry "Finding files to extract..."
-    local cmd=(pushd "${pkg_dir}")
-    shell_cmd "${cmd[@]}"
+    change_dir "${pkg_dir}"
     cmd=(find . -type f)
     shell_cmd "${cmd[@]}"
     local pkg_files=($shell_cmd_out)
-    cmd=(popd)
-    shell_cmd "${cmd[@]}"
     for pkg_file in "${pkg_files[@]}" ; do
         local tgt_file="${tgt_dir}/${pkg_file}"
         if ! [[ -e "${tgt_file}" ]] ; then
